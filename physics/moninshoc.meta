@@ -5,6 +5,36 @@
 
 ########################################################################
 [ccpp-arg-table]
+  name = moninshoc_init
+  type = scheme
+[do_shoc]
+  standard_name = flag_for_shoc
+  long_name = flag for SHOC
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+  optional = F
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+  optional = F
+[errflg]
+  standard_name = ccpp_error_flag
+  long_name = error flag for error handling in CCPP
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = out
+  optional = F
+  
+########################################################################
+[ccpp-arg-table]
   name = moninshoc_run
   type = scheme
 [im]
@@ -362,9 +392,9 @@
   optional = F
 [dkt]
   standard_name = atmosphere_heat_diffusivity
-  long_name = diffusivity for heat
+  long_name = atmospheric heat diffusivity
   units = m2 s-1
-  dimensions = (horizontal_loop_extent,vertical_dimension_minus_one)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = out

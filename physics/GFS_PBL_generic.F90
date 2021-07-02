@@ -83,7 +83,7 @@
         ntqv, ntcw, ntiw, ntrw, ntsw, ntlnc, ntinc, ntrnc, ntsnc, ntgnc,                 &
         ntwa, ntia, ntgl, ntoz, ntke, ntkev, nqrimef, trans_aero, ntchs, ntchm,          &
         imp_physics, imp_physics_gfdl, imp_physics_thompson, imp_physics_wsm6,           &
-        imp_physics_zhao_carr, imp_physics_mg, imp_physics_fer_hires, cplchm, ltaerosol, &
+        imp_physics_zhao_carr, imp_physics_mg, imp_physics_fer_hires, ltaerosol, &
         hybedmf, do_shoc, satmedmf, qgrs, vdftra, save_u, save_v, save_t, save_q,        &
         ldiag3d, qdiag3d, lssav, ugrs, vgrs, tgrs, errmsg, errflg)
 
@@ -99,13 +99,13 @@
       logical, intent(in) :: trans_aero, ldiag3d, qdiag3d, lssav
       integer, intent(in) :: imp_physics, imp_physics_gfdl, imp_physics_thompson, imp_physics_wsm6
       integer, intent(in) :: imp_physics_zhao_carr, imp_physics_mg, imp_physics_fer_hires
-      logical, intent(in) :: cplchm, ltaerosol, hybedmf, do_shoc, satmedmf
+      logical, intent(in) :: ltaerosol, hybedmf, do_shoc, satmedmf
 
-      real(kind=kind_phys), dimension(im, levs, ntrac), intent(in) :: qgrs
-      real(kind=kind_phys), dimension(im, levs), intent(in) :: ugrs, vgrs, tgrs
-      real(kind=kind_phys), dimension(im, levs, nvdiff), intent(inout) :: vdftra
-      real(kind=kind_phys), dimension(im, levs), intent(out) :: save_u, save_v, save_t
-      real(kind=kind_phys), dimension(im, levs, ntrac), intent(out) :: save_q
+      real(kind=kind_phys), dimension(:,:,:), intent(in) :: qgrs
+      real(kind=kind_phys), dimension(:,:), intent(in) :: ugrs, vgrs, tgrs
+      real(kind=kind_phys), dimension(:,:, :), intent(inout) :: vdftra
+      real(kind=kind_phys), dimension(:,:), intent(out) :: save_u, save_v, save_t
+      real(kind=kind_phys), dimension(:,:, :), intent(out) :: save_q
 
       ! CCPP error handling variables
       character(len=*), intent(out) :: errmsg
@@ -247,11 +247,7 @@
                                         imp_physics_mg, ntgl, imp_physics_gfdl, &
                                         imp_physics_zhao_carr, kk,              &
                                         errmsg, errflg)
-          !if (cplchm) then
-           if (errflg==1) return
-          !else
-          ! if (.not.errflg==1) return
-          !endif
+          if (errflg /= 0) return
           !
           k1 = kk
           do n=ntchs,ntchm+ntchs-1
@@ -321,7 +317,7 @@
         dqsfc_cpl, dusfci_cpl, dvsfci_cpl, dtsfci_cpl, dqsfci_cpl, dusfc_diag, dvsfc_diag, dtsfc_diag, dqsfc_diag,             &
         dusfci_diag, dvsfci_diag, dtsfci_diag, dqsfci_diag, dt3dt, du3dt_PBL, du3dt_OGWD, dv3dt_PBL, dv3dt_OGWD, dq3dt,        &
         dq3dt_ozone, rd, cp, fvirt, hvap, t1, q1, prsl, hflx, ushfsfci, oceanfrac, kdt, dusfc_cice, dvsfc_cice,                &
-        dtsfc_cice, dqsfc_cice, wet, dry, icy, wind, stress_wat, hflx_wat, evap_wat, ugrs1, vgrs1, dkt_cpl, dkt, hffac, hefac, &
+        dtsfc_cice, dqsfc_cice, wet, dry, icy, wind, stress_wat, hflx_wat, evap_wat, ugrs1, vgrs1, hffac, hefac, &
         ugrs, vgrs, tgrs, qgrs, save_u, save_v, save_t, save_q, errmsg, errflg)
 
       use machine,                only : kind_phys
@@ -340,8 +336,8 @@
       integer, intent(in) :: kdt
 
       logical, intent(in) :: flag_for_pbl_generic_tend      
-      real(kind=kind_phys), dimension(im, levs), intent(in) :: save_u, save_v, save_t
-      real(kind=kind_phys), dimension(im, levs, ntrac), intent(in) :: save_q
+      real(kind=kind_phys), dimension(:,:), intent(in) :: save_u, save_v, save_t
+      real(kind=kind_phys), dimension(:,:, :), intent(in) :: save_q
 
       real(kind=kind_phys), intent(in) :: dtf
       real(kind=kind_phys), intent(in) :: rd, cp, fvirt, hvap
@@ -350,14 +346,14 @@
       real(kind=kind_phys), dimension(:), intent(in) :: dusfc_cice, dvsfc_cice, dtsfc_cice, dqsfc_cice, &
           wind, stress_wat, hflx_wat, evap_wat, ugrs1, vgrs1
 
-      real(kind=kind_phys), dimension(im, levs, ntrac), intent(in) :: qgrs
-      real(kind=kind_phys), dimension(im, levs), intent(in) :: ugrs, vgrs, tgrs
+      real(kind=kind_phys), dimension(:,:, :), intent(in) :: qgrs
+      real(kind=kind_phys), dimension(:,:), intent(in) :: ugrs, vgrs, tgrs
 
-      real(kind=kind_phys), dimension(im, levs, nvdiff), intent(in) :: dvdftra
-      real(kind=kind_phys), dimension(im), intent(in) :: dusfc1, dvsfc1, dtsfc1, dqsfc1, xmu
-      real(kind=kind_phys), dimension(im, levs), intent(in) :: dudt, dvdt, dtdt, htrsw, htrlw
+      real(kind=kind_phys), dimension(:,:, :), intent(in) :: dvdftra
+      real(kind=kind_phys), dimension(:), intent(in) :: dusfc1, dvsfc1, dtsfc1, dqsfc1, xmu
+      real(kind=kind_phys), dimension(:,:), intent(in) :: dudt, dvdt, dtdt, htrsw, htrlw
 
-      real(kind=kind_phys), dimension(im, levs, ntrac), intent(inout) :: dqdt
+      real(kind=kind_phys), dimension(:,:, :), intent(inout) :: dqdt
 
       ! The following arrays may not be allocated, depending on certain flags (cplflx, ...).
       ! Since Intel 15 crashes when passing unallocated arrays to arrays defined with explicit shape,
@@ -370,11 +366,8 @@
       logical, dimension(:),intent(in) :: wet, dry, icy
       real(kind=kind_phys), dimension(:), intent(out) ::  ushfsfci
 
-      real(kind=kind_phys), dimension(:,:), intent(inout) :: dkt_cpl
-      real(kind=kind_phys), dimension(:,:), intent(in)    :: dkt
-
       ! From canopy heat storage - reduction factors in latent/sensible heat flux due to surface roughness
-      real(kind=kind_phys), dimension(im), intent(in) :: hffac, hefac
+      real(kind=kind_phys), dimension(:), intent(in) :: hffac, hefac
 
       character(len=*), intent(out) :: errmsg
       integer, intent(out) :: errflg
@@ -408,11 +401,7 @@
                                         imp_physics_mg, ntgl, imp_physics_gfdl, &
                                         imp_physics_zhao_carr, kk,              &
                                         errmsg, errflg)
-          !if (cplchm) then
-           if (errflg==1) return
-          !else
-          ! if (.not.errflg==1) return
-          !endif
+          if (errflg /= 0) return
           !
           k1 = kk
           do n=ntchs,ntchm+ntchs-1
@@ -541,16 +530,6 @@
 
       endif ! nvdiff == ntrac
 
-      if (cplchm) then
-        do i = 1, im
-          tem  = prsl(i,1) / (rd*t1(i)*(one+fvirt*max(q1(i), qmin)))
-          ushfsfci(i) = -cp * tem * hflx(i) ! upward sensible heat flux
-        enddo
-        ! dkt_cpl has dimensions (1:im,1:levs), but dkt has (1:im,1:levs-1)
-        dkt_cpl(1:im,1:levs-1) = dkt(1:im,1:levs-1)
-      endif
-
-
 !  --- ...  coupling insertion
 
       if (cplflx) then
@@ -601,6 +580,24 @@
           endif ! Ocean only, NO LAKES
         enddo
       endif
+
+      if (cplchm) then
+        if (cplflx) then
+          do i = 1, im
+            if (oceanfrac(i) > zero) then
+              ushfsfci(i) = dtsfci_cpl(i)
+            else
+              rho = prsl(i,1) / (rd*t1(i)*(one+fvirt*max(q1(i), qmin)))
+              ushfsfci(i) = cp * rho * hflx(i)
+            end if
+          end do
+        else
+          do i = 1, im
+            rho = prsl(i,1) / (rd*t1(i)*(one+fvirt*max(q1(i), qmin)))
+            ushfsfci(i) = cp * rho * hflx(i)
+          end do
+        end if
+      end if
 
 !-------------------------------------------------------lssav if loop ----------
       if (lssav) then

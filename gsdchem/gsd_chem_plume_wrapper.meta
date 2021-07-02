@@ -18,8 +18,8 @@
   name = gsd_chem_plume_wrapper_run
   type = scheme
 [im]
-  standard_name = horizontal_dimension
-  long_name = horizontal dimension
+  standard_name = horizontal_loop_extent
+  long_name = horizontal loop extent
   units = count
   dimensions = ()
   type = integer
@@ -62,7 +62,7 @@
   standard_name = vegetation_type_classification_for_coupling
   long_name = vegetation type at each grid cell copied from vegtype
   units = index
-  dimensions = (horizontal_dimension)
+  dimensions = (horizontal_loop_extent)
   type = integer
   intent = out
   optional = F
@@ -70,7 +70,7 @@
   standard_name = air_pressure_at_interface
   long_name = air pressure at model layer interfaces
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension_plus_one)
+  dimensions = (horizontal_loop_extent,vertical_dimension_plus_one)
   type = real
   kind = kind_phys
   intent = in
@@ -79,7 +79,7 @@
   standard_name = geopotential_at_interface
   long_name = geopotential at model layer interfaces
   units = m2 s-2
-  dimensions = (horizontal_dimension,vertical_dimension_plus_one)
+  dimensions = (horizontal_loop_extent,vertical_dimension_plus_one)
   type = real
   kind = kind_phys
   intent = in
@@ -88,7 +88,7 @@
   standard_name = geopotential
   long_name = geopotential at model layer centers
   units = m2 s-2
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = in
@@ -97,7 +97,7 @@
   standard_name = air_pressure
   long_name = mean layer pressure
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = in
@@ -106,7 +106,7 @@
   standard_name = air_temperature_updated_by_physics
   long_name = updated temperature
   units = K
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = inout
@@ -115,7 +115,7 @@
   standard_name = x_wind_updated_by_physics
   long_name = updated x-direction wind
   units = m s-1
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = inout
@@ -124,7 +124,7 @@
   standard_name = y_wind_updated_by_physics
   long_name = updated y-direction wind
   units = m s-1
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = inout
@@ -133,7 +133,7 @@
   standard_name = water_vapor_specific_humidity_updated_by_physics
   long_name = water vapor specific humidity updated by physics
   units = kg kg-1
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = inout
@@ -142,7 +142,7 @@
   standard_name = omega
   long_name = layer mean vertical velocity
   units = Pa s-1
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = in
@@ -151,7 +151,7 @@
   standard_name = vegetation_type_classification
   long_name = vegetation type at each grid cell
   units = index
-  dimensions = (horizontal_dimension)
+  dimensions = (horizontal_loop_extent)
   type = integer
   intent = in
   optional = F
@@ -159,7 +159,7 @@
   standard_name = emission_fire_GBBEPx
   long_name = emission fire GBBEPx
   units = various
-  dimensions = (horizontal_dimension,5)
+  dimensions = (horizontal_loop_extent,5)
   type = real
   kind = kind_phys
   intent = in
@@ -168,7 +168,7 @@
   standard_name = emission_fire_MODIS
   long_name = emission fire MODIS
   units = various
-  dimensions = (horizontal_dimension,13)
+  dimensions = (horizontal_loop_extent,13)
   type = real
   kind = kind_phys
   intent = in
@@ -177,7 +177,7 @@
   standard_name = GBBEPx_fire_radiative_power_for_stochastic_physics
   long_name = GBBEPx fire radiative power for stochastic physics
   units = MW
-  dimensions = (horizontal_dimension)
+  dimensions = (horizontal_loop_extent)
   type = real
   kind = kind_phys
   active = (flag_for_cellular_automata)
@@ -259,7 +259,7 @@
   standard_name = tracer_concentration_updated_by_physics
   long_name = tracer concentration updated by physics
   units = kg kg-1
-  dimensions = (horizontal_dimension,vertical_dimension,number_of_tracers)
+  dimensions = (horizontal_loop_extent,vertical_dimension,number_of_tracers)
   type = real
   kind = kind_phys
   intent = inout
@@ -268,7 +268,7 @@
   standard_name = tracer_concentration
   long_name = model layer mean tracer concentration
   units = kg kg-1
-  dimensions = (horizontal_dimension,vertical_dimension,number_of_tracers)
+  dimensions = (horizontal_loop_extent,vertical_dimension,number_of_tracers)
   type = real
   kind = kind_phys
   intent = inout
@@ -277,7 +277,7 @@
   standard_name = chem_buffer_ebu
   long_name = chemistry buffer of ebu
   units = various
-  dimensions = (horizontal_dimension,vertical_dimension_plus_one,1,7)
+  dimensions = (horizontal_loop_extent,vertical_dimension_plus_one,1,7)
   type = real
   kind = kind_phys
   intent = inout
@@ -286,7 +286,7 @@
   standard_name = instantaneous_anthopogenic_and_biomass_burning_emissions
   long_name = instantaneous anthopogenic and biomass burning emissions for black carbon, organic carbon, and sulfur dioxide
   units = kg m-2 s-1
-  dimensions = (horizontal_dimension,7)
+  dimensions = (horizontal_loop_extent,7)
   type = real
   kind = kind_phys
   intent = inout
@@ -304,7 +304,7 @@
   standard_name = fraction_of_cellular_automata_for_plume_rise_emissions
   long_name = fraction of cellular automata for plume rise emissions
   units = frac
-  dimensions = (horizontal_dimension)
+  dimensions = (horizontal_loop_extent)
   type = real
   kind = kind_phys
   intent = in
@@ -352,7 +352,7 @@
   standard_name = weights_for_stochastic_sppt_perturbation
   long_name = weights for stochastic sppt perturbation
   units = none
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = in

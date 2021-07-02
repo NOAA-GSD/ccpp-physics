@@ -10,7 +10,23 @@
 
       contains
 
-      subroutine samfdeepcnv_init()
+      subroutine samfdeepcnv_init(imfdeepcnv,imfdeepcnv_samf,             &
+     &                            errmsg, errflg)
+      
+      integer,                   intent(in) :: imfdeepcnv
+      integer,                   intent(in) :: imfdeepcnv_samf
+      character(len=*),          intent(out) :: errmsg
+      integer,                   intent(out) :: errflg
+
+
+      ! Consistency checks
+      if (imfdeepcnv/=imfdeepcnv_samf) then
+        write(errmsg,'(*(a))') 'Logic error: namelist choice of',       &
+     &    ' deep convection is different from SAMF scheme'
+           errflg = 1
+        return
+      end if
+
       end subroutine samfdeepcnv_init
 
       subroutine samfdeepcnv_finalize()
@@ -78,29 +94,28 @@
       implicit none
 !
       integer, intent(in)  :: im, km, itc, ntc, ntk, ntr, ncloud
-      integer, intent(in)  :: islimsk(im)
+      integer, intent(in)  :: islimsk(:)
       real(kind=kind_phys), intent(in) :: cliq, cp, cvap, eps, epsm1,   &
      &   fv, grav, hvap, rd, rv, t0c
       real(kind=kind_phys), intent(in) ::  delt
-      real(kind=kind_phys), intent(in) :: psp(im), delp(im,km),         &
-     &   prslp(im,km),  garea(im), dot(im,km), phil(im,km)
+      real(kind=kind_phys), intent(in) :: psp(:), delp(:,:),            &
+     &   prslp(:,:),  garea(:), dot(:,:), phil(:,:)
       real(kind=kind_phys), dimension(:), intent(in) :: fscav
       logical, intent(in)  :: hwrf_samfdeep, ca_sgs_emis
       real(kind=kind_phys), intent(in) :: nthresh
-      real(kind=kind_phys), intent(in) :: ca_deep(im)
-      real(kind=kind_phys), intent(out) :: rainevap(im)
+      real(kind=kind_phys), intent(in) :: ca_deep(:)
+      real(kind=kind_phys), intent(out) :: rainevap(:)
       logical, intent(in)  :: do_ca,ca_closure,ca_entr,ca_trigger
 
-      integer, intent(inout)  :: kcnv(im)
-      ! DH* TODO - check dimensions of qtr, ntr+2 correct?  *DH
-      real(kind=kind_phys), intent(inout) ::   qtr(im,km,ntr+2),        &
-     &   q1(im,km), t1(im,km),   u1(im,km), v1(im,km),                  &
-     &   cnvw(im,km),  cnvc(im,km)
+      integer, intent(inout)  :: kcnv(:)
+      real(kind=kind_phys), intent(inout) ::   qtr(:,:,:),              &
+     &   q1(:,:), t1(:,:),   u1(:,:), v1(:,:),                          &
+     &   cnvw(:,:),  cnvc(:,:)
 
-      integer, intent(out) :: kbot(im), ktop(im)
-      real(kind=kind_phys), intent(out) :: cldwrk(im),                  &
-     &   rn(im),                                                        &
-     &   ud_mf(im,km),dd_mf(im,km), dt_mf(im,km)
+      integer, intent(out) :: kbot(:), ktop(:)
+      real(kind=kind_phys), intent(out) :: cldwrk(:),                   &
+     &   rn(:),                                                         &
+     &   ud_mf(:,:),dd_mf(:,:), dt_mf(:,:)
       
       ! GJF* These variables are conditionally allocated depending on whether the
       !     Morrison-Gettelman microphysics is used, so they must be declared 
@@ -109,7 +124,7 @@
      &   qlcn, qicn, w_upi, cnv_mfd, cnv_dqldt, clcn                    &
      &,  cnv_fice, cnv_ndrop, cnv_nice, cf_upi
       ! *GJF
-      integer :: mp_phys, mp_phys_mg
+      integer, intent(in) :: mp_phys, mp_phys_mg
 
       real(kind=kind_phys), intent(in) :: clam,  c0s,  c1,              &
      &                     betal,   betas,   asolfac,                   &
@@ -227,7 +242,7 @@ c  physical parameters
      &                     ctr(im,km,ntr), ctro(im,km,ntr)
 !  for aerosol transport
       real(kind=kind_phys) qaero(im,km,ntc)
-      real(kind=kind_phys), intent(inout), optional :: wetdpc_deep(:,:)
+      real(kind=kind_phys), intent(inout) :: wetdpc_deep(:,:)
       logical, intent(in) :: cplchm
 !  for updraft velocity calculation
       real(kind=kind_phys) wu2(im,km),     buo(im,km),    drag(im,km)
@@ -331,6 +346,7 @@ c
         cina(i) = 0.
         pwavo(i)= 0.
         pwevo(i)= 0.
+        xmb(i)  = 0.
         xpwav(i)= 0.
         xpwev(i)= 0.
         vshear(i) = 0.
@@ -339,12 +355,20 @@ c
            wetdpc_deep(i,:) = 0.
         endif
       enddo
+
       if(do_ca .and. .not. ca_sgs_emis)then
         do i=1,im
           rainevap(i) = 0.
         enddo
       endif
-!
+
+      do k=1,km
+        do i=1,im
+          xlamud(i,k) = 0.
+          xlamue(i,k) = 0.
+        enddo
+      enddo
+
       if (hwrf_samfdeep) then
         do i=1,im
           scaldfunc(i)=-1.0

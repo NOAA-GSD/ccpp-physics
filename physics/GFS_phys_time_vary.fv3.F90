@@ -75,16 +75,18 @@
               isot, ivegsrc, nlunit, sncovr, sncovr_ice, lsm, lsm_noahmp, lsm_ruc, min_seaice,     &
               fice, landfrac, vtype, weasd, lsoil, zs, dzs, lsnow_lsm_lbound, lsnow_lsm_ubound,    &
               tvxy, tgxy, tahxy, canicexy, canliqxy, eahxy, cmxy, chxy, fwetxy, sneqvoxy, alboldxy,&
-              qsnowxy, wslakexy, albdvis, albdnir, albivis, albinir, emiss, taussxy, waxy, wtxy,   &
+              qsnowxy, wslakexy, albdvis_lnd, albdnir_lnd, albivis_lnd, albinir_lnd, albdvis_ice,  & 
+              albdnir_ice, albivis_ice, albinir_ice, emiss_lnd, emiss_ice, taussxy, waxy, wtxy,    &
               zwtxy, xlaixy, xsaixy, lfmassxy, stmassxy, rtmassxy, woodxy, stblcpxy, fastcpxy,     &
               smcwtdxy, deeprechxy, rechxy, snowxy, snicexy, snliqxy, tsnoxy , smoiseq, zsnsoxy,   &
-              slc, smc, stc, tsfcl, snowd, canopy, tg3, stype, con_t0c, nthrds, errmsg, errflg)
+              slc, smc, stc, tsfcl, snowd, canopy, tg3, stype, con_t0c, flag_restart, nthrds,      &
+              errmsg, errflg)
 
          implicit none
 
          ! Interface variables
          integer,              intent(in)    :: me, master, ntoz, iccn, iflip, im, nx, ny
-         logical,              intent(in)    :: h2o_phys, iaerclm
+         logical,              intent(in)    :: h2o_phys, iaerclm, flag_restart
          integer,              intent(in)    :: idate(:)
          real(kind_phys),      intent(in)    :: xlat_d(:), xlon_d(:)
 
@@ -125,11 +127,16 @@
          real(kind_phys),      intent(inout) :: alboldxy(:)
          real(kind_phys),      intent(inout) :: qsnowxy(:)
          real(kind_phys),      intent(inout) :: wslakexy(:)
-         real(kind_phys),      intent(inout) :: albdvis(:)
-         real(kind_phys),      intent(inout) :: albdnir(:)
-         real(kind_phys),      intent(inout) :: albivis(:)
-         real(kind_phys),      intent(inout) :: albinir(:)
-         real(kind_phys),      intent(inout) :: emiss(:)
+         real(kind_phys),      intent(inout) :: albdvis_lnd(:)
+         real(kind_phys),      intent(inout) :: albdnir_lnd(:)
+         real(kind_phys),      intent(inout) :: albivis_lnd(:)
+         real(kind_phys),      intent(inout) :: albinir_lnd(:)
+         real(kind_phys),      intent(inout) :: albdvis_ice(:)
+         real(kind_phys),      intent(inout) :: albdnir_ice(:)
+         real(kind_phys),      intent(inout) :: albivis_ice(:)
+         real(kind_phys),      intent(inout) :: albinir_ice(:)
+         real(kind_phys),      intent(inout) :: emiss_lnd(:)
+         real(kind_phys),      intent(inout) :: emiss_ice(:)
          real(kind_phys),      intent(inout) :: taussxy(:)
          real(kind_phys),      intent(inout) :: waxy(:)
          real(kind_phys),      intent(inout) :: wtxy(:)
@@ -305,8 +312,8 @@
            call setindxh2o (im, xlat_d, jindx1_h, jindx2_h, ddy_h)
          endif
 
-!> - Call setindxaer() to initialize aerosols data
 !$OMP section
+!> - Call setindxaer() to initialize aerosols data
          if (iaerclm) then
            call setindxaer (im, xlat_d, jindx1_aer,          &
                             jindx2_aer, ddy_aer, xlon_d,     &
@@ -317,8 +324,8 @@
            jamin=min(minval(jindx1_aer), jamin)
            jamax=max(maxval(jindx2_aer), jamax)
          endif
-!$OMP section
 
+!$OMP section
 !> - Call setindxci() to initialize IN and CCN data
          if (iccn == 1) then
            call setindxci (im, xlat_d, jindx1_ci,      &
@@ -376,14 +383,39 @@
 !$OMP end sections
 
 !$OMP end parallel
+
+         if (errflg/=0) return
+
          if (iaerclm) then
-           call read_aerdataf (iamin, iamax, jamin, jamax, me,master,iflip,            &
-                              idate,errmsg,errflg)
-         endif
+           call read_aerdataf (iamin, iamax, jamin, jamax, me, master, iflip, &
+                               idate, errmsg, errflg)
+           if (errflg/=0) return
+         end if
 
-         if (lsm == lsm_noahmp) then
-           if (all(tvxy < zero)) then
+         !--- For Noah MP or RUC LSMs: initialize four components of albedo for
+         !--- land and ice - not for restart runs
+         lsm_init: if (.not.flag_restart) then
+           if (lsm == lsm_noahmp .or. lsm == lsm_ruc) then
+             if (me == master ) write(0,'(a)') 'GFS_phys_time_vary_init: initialize albedo for land and ice' 
+             do ix=1,im
+               albdvis_lnd(ix)  = 0.2_kind_phys
+               albdnir_lnd(ix)  = 0.2_kind_phys
+               albivis_lnd(ix)  = 0.2_kind_phys
+               albinir_lnd(ix)  = 0.2_kind_phys
+               emiss_lnd(ix)    = 0.95_kind_phys
+             enddo
+           endif
+           if (lsm == lsm_ruc) then
+             do ix=1,im
+               albdvis_ice(ix)  = 0.6_kind_phys
+               albdnir_ice(ix)  = 0.6_kind_phys
+               albivis_ice(ix)  = 0.6_kind_phys
+               albinir_ice(ix)  = 0.6_kind_phys
+               emiss_ice(ix)    = 0.97_kind_phys
+             enddo
+           endif
 
+           noahmp_init: if (lsm == lsm_noahmp) then
              allocate(dzsno (lsnow_lsm_lbound:lsnow_lsm_ubound))
              allocate(dzsnso(lsnow_lsm_lbound:lsoil)           )
              dzsno(:)    = missing_value
@@ -402,11 +434,6 @@
              alboldxy(:) = missing_value
              qsnowxy(:)  = missing_value
              wslakexy(:) = missing_value
-             albdvis(:)  = missing_value
-             albdnir(:)  = missing_value
-             albivis(:)  = missing_value
-             albinir(:)  = missing_value
-             emiss(:)    = missing_value
              taussxy(:)  = missing_value
              waxy(:)     = missing_value
              wtxy(:)     = missing_value
@@ -431,15 +458,34 @@
              smoiseq(:,:)  = missing_value
              zsnsoxy(:,:)  = missing_value
 
+             imn           = idate(2)
+
+!$OMP parallel do num_threads(nthrds) default(none)                     &
+!$OMP          shared(im,lsoil,con_t0c,landfrac,tsfcl,tvxy,tgxy,tahxy)  &
+!$OMP          shared(snowd,canicexy,canliqxy,canopy,eahxy,cmxy,chxy)   &
+!$OMP          shared(fwetxy,sneqvoxy,weasd,alboldxy,qsnowxy,wslakexy)  &
+!$OMP          shared(taussxy)                                          &
+!$OMP          shared(waxy,wtxy,zwtxy,imn,vtype,xlaixy,xsaixy,lfmassxy) &
+!$OMP          shared(stmassxy,rtmassxy,woodxy,stblcpxy,fastcpxy)       &
+!$OMP          shared(isbarren_table,isice_table,isurban_table)         &
+!$omp          shared(iswater_table,laim_table,sla_table,bexp_table)    &
+!$omp          shared(stc,smc,slc,tg3,snowxy,tsnoxy,snicexy,snliqxy)    &
+!$omp          shared(zsnsoxy,STYPE,SMCMAX_TABLE,SMCWLT_TABLE,zs,dzs)   &
+!$omp          shared(DWSAT_TABLE,DKSAT_TABLE,PSISAT_TABLE,smoiseq)     &
+!$OMP          shared(smcwtdxy,deeprechxy,rechxy,errmsg,errflg)         &
+!$OMP          private(vegtyp,masslai,masssai,snd,dzsno,dzsnso,isnow)   &
+!$OMP          private(soiltyp,bexp,smcmax,smcwlt,dwsat,dksat,psisat,ddz)
              do ix=1,im
                if (landfrac(ix) >= drythresh) then
                  tvxy(ix)     = tsfcl(ix)
                  tgxy(ix)     = tsfcl(ix)
                  tahxy(ix)    = tsfcl(ix)
 
-                 if (snowd(ix) > 0.01_kind_phys .and. tsfcl(ix) > con_t0c ) tvxy(ix)  = con_t0c
-                 if (snowd(ix) > 0.01_kind_phys .and. tsfcl(ix) > con_t0c ) tgxy(ix)  = con_t0c
-                 if (snowd(ix) > 0.01_kind_phys .and. tsfcl(ix) > con_t0c ) tahxy(ix) = con_t0c
+                 if (snowd(ix) > 0.01_kind_phys .and. tsfcl(ix) > con_t0c ) then
+                   tvxy(ix)  = con_t0c
+                   tgxy(ix)  = con_t0c
+                   tahxy(ix) = con_t0c
+                 end if
 
                  canicexy(ix) = 0.0_kind_phys
                  canliqxy(ix) = canopy(ix)
@@ -457,12 +503,6 @@
                  ! already set to 0.0
                  wslakexy(ix) = zero
                  taussxy(ix)  = zero
-                 albdvis(ix)  = 0.2_kind_phys
-                 albdnir(ix)  = 0.2_kind_phys
-                 albivis(ix)  = 0.2_kind_phys
-                 albinir(ix)  = 0.2_kind_phys
-                 emiss(ix)    = 0.95_kind_phys
-
 
                  waxy(ix)     = 4900.0_kind_phys
                  wtxy(ix)     = waxy(ix)
@@ -470,7 +510,6 @@
 
                  vegtyp       = vtype(ix)
                  if (vegtyp == 0) vegtyp = 7
-                 imn          = idate(2)
 
                  if ((vegtyp == isbarren_table) .or. (vegtyp == isice_table) .or. (vegtyp == isurban_table) .or. (vegtyp == iswater_table)) then
 
@@ -552,7 +591,6 @@
                  else
                    errmsg = 'Error in GFS_phys_time_vary.fv3.F90: Problem with the logic assigning snow layers in Noah MP initialization'
                    errflg = 1
-                   return
                  endif
 
 ! Now we have the snowxy field
@@ -628,12 +666,15 @@
                endif
 
              enddo ! ix
+!$OMP end parallel do
+
+             if (errflg/=0) return
 
              deallocate(dzsno)
              deallocate(dzsnso)
 
-           endif
-         endif   !if Noah MP cold start ends
+           endif noahmp_init
+         endif lsm_init
 
          is_initialized = .true.
 
@@ -748,6 +789,20 @@
             return
          end if
 
+!$OMP parallel num_threads(nthrds) default(none)                                         &
+!$OMP          shared(kdt,nsswr,lsswr,clstp,imfdeepcnv,cal_pre,random_clds)              &
+!$OMP          shared(fhswr,fhour,seed0,cnx,cny,nrcm,wrk,rannie,rndval)                  &
+!$OMP          shared(rann,im,isc,jsc,imap,jmap,ntoz,me,idate,jindx1_o3,jindx2_o3)       &
+!$OMP          shared(ozpl,ddy_o3,h2o_phys,jindx1_h,jindx2_h,h2opl,ddy_h,iaerclm,master) &
+!$OMP          shared(levs,prsl,iccn,jindx1_ci,jindx2_ci,ddy_ci,iindx1_ci,iindx2_ci)     &
+!$OMP          shared(ddx_ci,in_nm,ccn_nm,do_ugwp_v1,jindx1_tau,jindx2_tau,ddy_j1tau)    &
+!$OMP          shared(ddy_j2tau,tau_amf)                                                 &
+!$OMP          private(iseed,iskip,i,j,k)
+
+!$OMP sections
+
+!$OMP section
+
          !--- switch for saving convective clouds - cnvc90.f
          !--- aka Ken Campana/Yu-Tai Hou legacy
          if ((mod(kdt,nsswr) == 0) .and. (lsswr)) then
@@ -763,6 +818,8 @@
            !--- accumulate
            clstp = 0100
          endif
+
+!$OMP section
 
          !--- random number needed for RAS and old SAS and when cal_pre=.true.
          !    imfdeepcnv < 0 when ras = .true.
@@ -789,6 +846,7 @@
 
          endif  ! imfdeepcnv, cal_re, random_clds
 
+!$OMP section
 !> - Call ozinterpol() to make ozone interpolation
          if (ntoz > 0) then
            call ozinterpol (me, im, idate, fhour, &
@@ -796,6 +854,7 @@
                             ozpl, ddy_o3)
          endif
 
+!$OMP section
 !> - Call h2ointerpol() to make stratospheric water vapor data interpolation
          if (h2o_phys) then
            call h2ointerpol (me, im, idate, fhour, &
@@ -803,15 +862,7 @@
                              h2opl, ddy_h)
          endif
 
-!> - Call aerinterpol() to make aerosol interpolation
-         if (iaerclm) then
-           call aerinterpol (me, master, im, idate, fhour, &
-                             jindx1_aer, jindx2_aer,       &
-                             ddy_aer, iindx1_aer,          &
-                             iindx2_aer, ddx_aer,          &
-                             levs, prsl, aer_nm)
-         endif
-
+!$OMP section
 !> - Call ciinterpol() to make IN and CCN data interpolation
          if (iccn == 1) then
            call ciinterpol (me, im, idate, fhour,     &
@@ -821,11 +872,26 @@
                             levs, prsl, in_nm, ccn_nm)
          endif
 
+!$OMP section
 !> - Call  cires_indx_ugwp to read monthly-mean GW-tau diagnosed from FV3GFS-runs that resolve GW-activ
          if (do_ugwp_v1) then
            call tau_amf_interp(me, master, im, idate, fhour, &
                                jindx1_tau, jindx2_tau,       &
                                ddy_j1tau, ddy_j2tau, tau_amf)
+         endif
+
+!$OMP end sections
+!$OMP end parallel
+
+!> - Call aerinterpol() to make aerosol interpolation
+         if (iaerclm) then
+           ! aerinterpol is using threading inside, don't
+           ! move into OpenMP parallel section above
+           call aerinterpol (me, master, nthrds, im, idate, &
+                              fhour, jindx1_aer, jindx2_aer,&
+                             ddy_aer, iindx1_aer,           &
+                             iindx2_aer, ddx_aer,           &
+                             levs, prsl, aer_nm)
          endif
 
 !> - Call gcycle() to repopulate specific time-varying surface properties for AMIP/forecast runs
